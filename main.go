@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ianivr/gator/internal/config"
 )
@@ -12,15 +13,21 @@ func main() {
 		panic(err)
 	}
 
-	err = cfg.SetUser("Ianiv")
-	if err != nil {
-		panic(err)
+	newState := &state{cfg: &cfg}
+
+	cmds := &commands{handlers: make(map[string]func(*state, command) error)}
+	cmds.register("login", handlerLogin)
+
+	args := os.Args
+	if len(args) < 2 {
+		fmt.Println("No command provided")
+		os.Exit(1)
 	}
 
-	cfg, err = config.Read()
+	cmd := command{name: args[1], args: args[2:]}
+	err = cmds.run(newState, cmd)
 	if err != nil {
-		panic(err)
+		fmt.Println("Error executing command: %v\n", err)
+		os.Exit(1)
 	}
-
-	fmt.Println("Current config:", cfg)
 }
