@@ -1,10 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/ianivr/gator/internal/config"
+	"github.com/ianivr/gator/internal/database"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -15,8 +19,13 @@ func main() {
 
 	newState := &state{cfg: &cfg}
 
+	db, err := sql.Open("postgres", cfg.DbURL)
+	dbQueries := database.New(db)
+	newState.db = dbQueries
+
 	cmds := &commands{handlers: make(map[string]func(*state, command) error)}
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
 
 	args := os.Args
 	if len(args) < 2 {

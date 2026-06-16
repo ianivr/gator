@@ -1,7 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"time"
+
+	"github.com/ianivr/gator/internal/database"
+
+	"github.com/google/uuid"
 )
 
 func handlerLogin(s *state, cmd command) error {
@@ -10,12 +17,61 @@ func handlerLogin(s *state, cmd command) error {
 	}
 
 	username := cmd.args[0]
+	_, err := s.db.GetUser(context.Background(), username)
+	if err != nil {
+		fmt.Printf("User %s does not exist. Please register first.\n", username)
+		os.Exit(1)
+	}
 
-	err := s.cfg.SetUser(username)
+	err = s.cfg.SetUser(username)
 	if err != nil {
 		return fmt.Errorf("failed to set user: %w", err)
 	}
 
 	fmt.Printf("User %s has been set\n", username)
 	return nil
+}
+
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.args) < 1 {
+		return fmt.Errorf("register command requires a name argument")
+	}
+
+	name := cmd.args[0]
+
+	_, err := s.db.GetUser(context.Background(), name)
+	if err == nil {
+		fmt.Printf("User %s already exists. Please login instead.\n", name)
+		os.Exit(1)
+	}
+
+	user, err := s.db.CreateUser(context.Background(), database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      name,
+	})
+	if err != nil {
+		fmt.Printf("Failed to create user: %v\n", err)
+		os.Exit(1)
+	}
+
+	err = s.cfg.SetUser(name)
+	if err != nil {
+		return fmt.Errorf("failed to set user: %w", err)
+	}
+	fmt.Printf("User %s has been created and set.\nData: %+v\n", user.Name, user)
+
+	return nil
+}
+
+func handlerReset(s *state, cmd command) error {
+	err := s.db.DeleteUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to delete users: %w", err)
+	}
+
+	fmt.Println("All users have been deleted.")
+	os.Exit(0)
+	return nil // This line will never be reached, but it satisfies the function signature.
 }
