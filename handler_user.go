@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func handlerLogin(s *state, cmd command) error {
+func handleLogin(s *state, cmd command) error {
 	if len(cmd.args) < 1 {
 		return fmt.Errorf("login command requires a username argument")
 	}
@@ -32,7 +32,7 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
-func handlerRegister(s *state, cmd command) error {
+func handleRegister(s *state, cmd command) error {
 	if len(cmd.args) < 1 {
 		return fmt.Errorf("register command requires a name argument")
 	}
@@ -65,7 +65,7 @@ func handlerRegister(s *state, cmd command) error {
 	return nil
 }
 
-func handlerReset(s *state, cmd command) error {
+func handleReset(s *state, cmd command) error {
 	err := s.db.DeleteUsers(context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to delete users: %w", err)
@@ -74,4 +74,22 @@ func handlerReset(s *state, cmd command) error {
 	fmt.Println("All users have been deleted.")
 	os.Exit(0)
 	return nil // This line will never be reached, but it satisfies the function signature.
+}
+
+func handleUsers(s *state, cmd command) error {
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to list users: %w", err)
+	}
+
+	fmt.Println("Registered users:")
+	for _, user := range users {
+		if s.cfg.CurrentUserName == user.Name {
+			fmt.Printf("* %s (current)\n", user.Name)
+			continue
+		}
+		fmt.Printf("* %s\n", user.Name)
+	}
+
+	return nil
 }

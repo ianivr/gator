@@ -24,9 +24,10 @@ func main() {
 	newState.db = dbQueries
 
 	cmds := &commands{handlers: make(map[string]func(*state, command) error)}
-	cmds.register("login", handlerLogin)
-	cmds.register("register", handlerRegister)
-	cmds.register("reset", handlerReset)
+	cmds.register("login", handleLogin)
+	cmds.register("register", handleRegister)
+	cmds.register("reset", handleReset)
+	cmds.register("users", handleUsers)
 
 	args := os.Args
 	if len(args) < 2 {
