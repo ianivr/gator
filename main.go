@@ -26,6 +26,7 @@ func main() {
 	cmds := &commands{handlers: make(map[string]func(*state, command) error)}
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
 
 	args := os.Args
 	if len(args) < 2 {
@@ -36,7 +37,7 @@ func main() {
 	cmd := command{name: args[1], args: args[2:]}
 	err = cmds.run(newState, cmd)
 	if err != nil {
-		fmt.Println("Error executing command: %v\n", err)
+		fmt.Printf("Error executing command: %v\n", err)
 		os.Exit(1)
 	}
 }
