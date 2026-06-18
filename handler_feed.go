@@ -35,3 +35,20 @@ func handleAddFeed(s *state, cmd command) error {
 	fmt.Printf("Feed %s has been created.\nData: %+v\n", feed.Name, feed)
 	return nil
 }
+
+func handleFeeds(s *state, cmd command) error {
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get feeds: %w", err)
+	}
+
+	fmt.Printf("Feeds:\n")
+	for _, feed := range feeds {
+		userName, err := s.db.GetUserByID(context.Background(), feed.UserID)
+		if err != nil {
+			return fmt.Errorf("failed to get user for feed %s: %w", feed.Name, err)
+		}
+		fmt.Printf("- %s (URL: %s, User: %s)\n", feed.Name, feed.Url, userName)
+	}
+	return nil
+}
