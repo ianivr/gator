@@ -3,7 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/ianivr/gator/internal/database"
 )
 
 func handleAggregate(s *state, cmd command) error {
@@ -42,8 +47,36 @@ func scrapeFeeds(s *state) error {
 	}
 
 	for _, item := range feedFetched.Channel.Item {
-		fmt.Printf("- %v\n", item.Title)
+		_, err := s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: item.Description,
+			PublishedAt: parsePublishedDate(item.PubDate),
+			FeedID:      feed.ID,
+		})
+		if err != nil {
+			if strings.Contains(err.Error(), "23505") {
+				continue
+			} else {
+				log.Printf("Failed to create post for feed %s: %v", feed.Name, err)
+			}
+			return err
+		}
 	}
 
 	return nil
+}
+
+func parsePublishedDate(dateStr string) time.Time {
+	t, err := time.Parse(time.RFC1123Z, dateStr)
+	if err != nil {
+		t, err = time.Parse(time.RFC1123, dateStr)
+		if err != nil {
+			return time.Now()
+		}
+	}
+	return t
 }
